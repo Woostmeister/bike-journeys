@@ -7,7 +7,27 @@ export function RideForm() {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        alert(`Pretend we saved:\n${date} - ${distanceKm} km - ${notes}`);
+
+        const payload = {
+            date,
+            distanceKm: distanceKm ? parseFloat(distanceKm) : null,
+            notes
+        };
+
+        const res = await fetch("http://localhost:4000/api/createRide", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            alert("Ride saved!");
+            setDate("");
+            setDistanceKm("");
+            setNotes("");
+        } else {
+            alert("Error saving ride");
+        }
     }
 
     return (
