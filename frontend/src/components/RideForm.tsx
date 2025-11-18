@@ -16,7 +16,7 @@ export function RideForm() {
             notes
         };
 
-        const res = await fetch("http://localhost:4000/api/createRide", {
+        const res = await fetch("/api/createRide", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)

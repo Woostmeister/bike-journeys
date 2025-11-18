@@ -15,7 +15,7 @@ export function RideList() {
     useEffect(() => {
         async function fetchRides() {
             try {
-                const res = await fetch("http://localhost:4000/api/rides");
+                const res = await fetch("/api/rides");
                 if (!res.ok) throw new Error("Failed to fetch rides");
 
                 const data = await res.json();
