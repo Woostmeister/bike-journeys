@@ -83,7 +83,6 @@ export function RideForm() {
                         value={date}
                         onChange={e => setDate(e.target.value)}
                         style={inputStyle}
-                        required
                     />
                 </div>
 

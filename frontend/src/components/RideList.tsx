@@ -62,8 +62,10 @@ export function RideList() {
                             <strong>Date:</strong> {ride.date}
                         </div>
                         <div style={{ marginTop: "6px" }}>
-                            <strong>Distance:</strong> {ride.distance_miles} miles
+                            <strong>Distance:</strong>{" "}
+                            {ride.distance_miles ? `${ride.distance_miles} miles` : "Not recorded"}
                         </div>
+
                         {ride.notes && (
                             <div style={{ marginTop: "6px" }}>
                                 <strong>Notes:</strong> {ride.notes}

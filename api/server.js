@@ -30,6 +30,27 @@ db.serialize(() => {
 app.post("/api/createRide", (req, res) => {
     const { date, distance, notes } = req.body;
 
+    // ---------------------
+    // Validation checks
+    // ---------------------
+    if (!date) {
+        console.warn("Validation failed: Missing date");
+        return res.status(400).json({
+            success: false,
+            error: "Date is required."
+        });
+    }
+
+    // Distance can be null, but if provided it must be a valid number
+    if (distance !== null && distance !== undefined && isNaN(Number(distance))) {
+        console.warn("Validation failed: Invalid distance value");
+        return res.status(400).json({
+            success: false,
+            error: "Distance must be a valid number."
+        });
+    }
+
+
     console.log("Incoming ride:", { date, distance, notes });
 
     db.run(
