@@ -4,7 +4,27 @@ const sqlite3 = require("sqlite3").verbose();
 const path = require("path");
 
 const app = express();
-app.use(cors());
+const allowedOrigins = [
+    "http://localhost:5173",   // Your React frontend during development
+    "https://your-azure-site-name.azurestaticapps.net" // Placeholder for later
+];
+
+app.use(
+    cors({
+        origin: (origin, callback) => {
+            // Allow tools like Postman (no origin)
+            if (!origin) return callback(null, true);
+
+            if (allowedOrigins.includes(origin)) {
+                return callback(null, true);
+            } else {
+                console.warn("Blocked CORS request from:", origin);
+                return callback(new Error("Not allowed by CORS"));
+            }
+        }
+    })
+);
+
 app.use(express.json());
 
 // ---------------------
