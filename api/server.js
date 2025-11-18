@@ -1,63 +1,75 @@
 const express = require("express");
-const bodyParser = require("body-parser");
-const { getDb } = require("./db/db");
+const cors = require("cors");
+const sqlite3 = require("sqlite3").verbose();
+const path = require("path");
 
 const app = express();
-const port = 4000;
+app.use(cors());
+app.use(express.json());
 
-app.use(bodyParser.json());
+// ---------------------
+// SQLite Setup
+// ---------------------
+const dbPath = path.join(__dirname, "rides.db");
+const db = new sqlite3.Database(dbPath);
 
-app.post("/api/createRide", async (req, res) => {
-    try {
-        const body = req.body || {};
-        const {
-            date,
-            startTime = null,
-            endTime = null,
-            sourceType = "Manual",
-            bikeId = null,
-            distanceKm = null,
-            notes = ""
-        } = body;
+db.serialize(() => {
+    db.run(`
+        CREATE TABLE IF NOT EXISTS rides (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL,
+            distance_miles REAL,
+            notes TEXT
+        )
+    `);
+});
 
-        if (!date) {
-            return res.status(400).json({ error: "date is required" });
+// ---------------------
+// POST: Create Ride
+// ---------------------
+app.post("/api/createRide", (req, res) => {
+    const { date, distance, notes } = req.body;
+
+    console.log("Incoming ride:", { date, distance, notes });
+
+    db.run(
+        "INSERT INTO rides (date, distance_miles, notes) VALUES (?, ?, ?)",
+        [date, distance, notes],
+        function (err) {
+            if (err) {
+                console.error("Database error:", err);
+                return res.status(500).json({ success: false, error: "Failed to save ride" });
+            }
+
+            console.log("Saved ride to database:", date, distance, notes);
+
+            res.json({ success: true, id: this.lastID });
+        }
+    );
+});
+
+// ---------------------
+// GET: List All Rides
+// ---------------------
+app.get("/api/rides", (req, res) => {
+    db.all("SELECT * FROM rides ORDER BY date DESC", (err, rows) => {
+        if (err) {
+            console.error("Database fetch error:", err);
+            return res.status(500).json({ success: false });
         }
 
-        const db = getDb();
+        console.log("Fetched all rides:", rows.length);
 
-        await new Promise((resolve, reject) => {
-            const sql = `
-        INSERT INTO rides (
-          date, start_time, end_time, source_type, bike_id,
-          distance_km, notes
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `;
-            const params = [
-                date,
-                startTime,
-                endTime,
-                sourceType,
-                bikeId,
-                distanceKm,
-                notes
-            ];
-
-            db.run(sql, params, function (err) {
-                if (err) return reject(err);
-                resolve(this.lastID);
-            });
-        });
-
-        db.close();
-        res.status(201).json({ success: true });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Failed to create ride" });
-    }
+        res.json(rows);
+    });
 });
 
-app.listen(port, () => {
-    console.log(`API server listening on http://localhost:${port}`);
+// ---------------------
+// Start Server
+// ---------------------
+const PORT = 4000;
+app.listen(PORT, () => {
+    console.log(`API server running at http://localhost:${PORT}`);
 });
+
+
