@@ -4,7 +4,7 @@ const path = require("path");
 // Path to the SQLite DB file inside the API folder
 // Azure Functions run from "/home/site/wwwroot"
 // so relative paths are safe
-const dbPath = path.join(__dirname, "..", "rides.db");
+const dbPath = process.env.SQLITE_DB_PATH || "/tmp/rides.db";
 
 const db = new sqlite3.Database(dbPath);
 
