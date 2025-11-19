@@ -48,31 +48,35 @@ export function RideList() {
             {rides.length === 0 && <p>No rides saved yet.</p>}
 
             <ul style={{ listStyle: "none", padding: 0, marginTop: "20px" }}>
-                {rides.map(ride => (
-                    <li
-                        key={ride.id}
-                        style={{
-                            background: "#3a3a3a",
-                            padding: "16px",
-                            borderRadius: "8px",
-                            marginBottom: "12px"
-                        }}
-                    >
-                        <div>
-                            <strong>Date:</strong> {ride.date}
-                        </div>
-                        <div style={{ marginTop: "6px" }}>
-                            <strong>Distance:</strong>{" "}
-                            {ride.distance_miles ? `${ride.distance_miles} miles` : "Not recorded"}
-                        </div>
+                {rides.map(ride => {
+                    const hasDistance = ride.distance_miles !== null && ride.distance_miles !== undefined;
 
-                        {ride.notes && (
-                            <div style={{ marginTop: "6px" }}>
-                                <strong>Notes:</strong> {ride.notes}
+                    return (
+                        <li
+                            key={ride.id}
+                            style={{
+                                background: "#3a3a3a",
+                                padding: "16px",
+                                borderRadius: "8px",
+                                marginBottom: "12px"
+                            }}
+                        >
+                            <div>
+                                <strong>Date:</strong> {ride.date}
                             </div>
-                        )}
-                    </li>
-                ))}
+                            <div style={{ marginTop: "6px" }}>
+                                <strong>Distance:</strong>{" "}
+                                {hasDistance ? `${ride.distance_miles} miles` : "Not recorded"}
+                            </div>
+
+                            {ride.notes && (
+                                <div style={{ marginTop: "6px" }}>
+                                    <strong>Notes:</strong> {ride.notes}
+                                </div>
+                            )}
+                        </li>
+                    );
+                })}
             </ul>
         </div>
     );
