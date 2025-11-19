@@ -1,0 +1,6 @@
+*.py
+requirements.txt
+pyproject.toml
+Pipfile
+Pipfile.lock
+.python-version
