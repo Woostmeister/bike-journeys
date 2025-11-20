@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "../../lib/supabaseClient.ts";  // <-- make sure this path matches your project
 
 export function RideForm() {
     const [date, setDate] = useState("");
@@ -10,29 +11,40 @@ export function RideForm() {
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
 
+        // basic validation
+        if (!date || !distanceMiles) {
+            setMessage("Please enter a date and distance.");
+            setMessageType("error");
+            return;
+        }
+
+        // Build the record exactly to match your Supabase table
         const payload = {
             date,
-            distance: distanceMiles ? parseFloat(distanceMiles) : null,
-            notes
+            distance_miles: parseFloat(distanceMiles),
+            notes: notes || null
         };
 
-        const res = await fetch("/api/createRide", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
+        console.log("Saving to Supabase:", payload);
 
-        if (res.ok) {
-            setMessage("Ride saved successfully!");
-            setMessageType("success");
+        const { error } = await supabase
+            .from("rides")
+            .insert([payload]);
 
-            setDate("");
-            setDistanceMiles("");
-            setNotes("");
-        } else {
+        if (error) {
+            console.error("Supabase insert error:", error);
             setMessage("Error saving ride. Please try again.");
             setMessageType("error");
+            return;
         }
+
+        // success!
+        setMessage("Ride saved successfully!");
+        setMessageType("success");
+
+        setDate("");
+        setDistanceMiles("");
+        setNotes("");
     }
 
     const inputStyle: React.CSSProperties = {
@@ -135,4 +147,5 @@ export function RideForm() {
         </form>
     );
 }
+
 

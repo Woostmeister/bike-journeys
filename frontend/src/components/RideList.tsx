@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabaseClient.ts"; 
 
 type Ride = {
-    id: number;
+    id: string;
     date: string;
-    distance_miles: number;
+    distance_miles: number | null;
     notes: string | null;
 };
 
@@ -14,17 +15,19 @@ export function RideList() {
 
     useEffect(() => {
         async function fetchRides() {
-            try {
-                const res = await fetch("/api/rides");
-                if (!res.ok) throw new Error("Failed to fetch rides");
+            const { data, error } = await supabase
+                .from("rides")
+                .select("*")
+                .order("date", { ascending: false });
 
-                const data = await res.json();
-                setRides(data);
-            } catch (err) {
+            if (error) {
+                console.error("Error loading rides:", error);
                 setError("Could not load rides.");
-            } finally {
-                setLoading(false);
+            } else {
+                setRides(data || []);
             }
+
+            setLoading(false);
         }
 
         fetchRides();
@@ -61,9 +64,12 @@ export function RideList() {
                         <div>
                             <strong>Date:</strong> {ride.date}
                         </div>
+
                         <div style={{ marginTop: "6px" }}>
                             <strong>Distance:</strong>{" "}
-                            {ride.distance_miles ? `${ride.distance_miles} miles` : "Not recorded"}
+                            {ride.distance_miles !== null
+                                ? `${ride.distance_miles} miles`
+                                : "Not recorded"}
                         </div>
 
                         {ride.notes && (
@@ -77,4 +83,5 @@ export function RideList() {
         </div>
     );
 }
+
 
