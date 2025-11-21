@@ -194,4 +194,4 @@ MIT
 
 ---
 
-Built with ❤️ and ☕ by Gareth
+Built with ❤️ and ☕ by Carol
