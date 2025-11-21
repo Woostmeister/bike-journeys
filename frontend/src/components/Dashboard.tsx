@@ -13,12 +13,6 @@ interface Ride {
     temperature: number | null;
 }
 
-interface MonthlyData {
-    month: string;
-    distance: number;
-    rides: number;
-}
-
 export function Dashboard() {
     const { user } = useAuth();
     const [rides, setRides] = useState<Ride[]>([]);
@@ -78,10 +72,6 @@ export function Dashboard() {
         rides.forEach(ride => {
             const date = new Date(ride.date);
             const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-            const monthLabel = date.toLocaleDateString("en-GB", {
-                month: "short",
-                year: "numeric"
-            });
 
             if (!dataMap.has(key)) {
                 dataMap.set(key, { distance: 0, rides: 0 });
@@ -95,9 +85,10 @@ export function Dashboard() {
         return Array.from(dataMap.entries())
             .sort((a, b) => a[0].localeCompare(b[0]))
             .slice(-12)
-            .map(([key, data]) => {
+            .map(([key]) => {
                 const [year, month] = key.split("-");
                 const date = new Date(parseInt(year), parseInt(month) - 1);
+                const data = dataMap.get(key)!;
                 return {
                     month: date.toLocaleDateString("en-GB", { month: "short", year: "2-digit" }),
                     distance: Math.round(data.distance),
