@@ -165,7 +165,6 @@ npm run build
 ### Deploy Options
 - **Vercel**: Connect GitHub repo, auto-deploy
 - **Netlify**: Drag & drop `dist` folder
-- **Azure Static Web Apps**: Use GitHub Actions
 - **Your own server**: Serve `dist` folder
 
 ### Environment Variables
