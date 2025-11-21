@@ -70,10 +70,26 @@ export function RideForm() {
         let weather_code = null;
         let temperature = null;
 
+        const rideDate = new Date(date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const useArchiveApi = rideDate < today;
+
+        const params = new URLSearchParams({
+            latitude: String(lat),
+            longitude: String(lon),
+            hourly: "weathercode,temperature_2m",
+            start_date: date,
+            end_date: date
+        });
+
         try {
-            const weatherResponse = await fetch(
-                `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=weathercode,temperature_2m&start_date=${date}&end_date=${date}`
-            );
+            const baseUrl = useArchiveApi
+                ? "https://archive-api.open-meteo.com/v1/archive"
+                : "https://api.open-meteo.com/v1/forecast";
+
+            const weatherResponse = await fetch(`${baseUrl}?${params.toString()}`);
 
             const weatherData = await weatherResponse.json();
 

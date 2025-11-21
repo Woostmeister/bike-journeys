@@ -186,9 +186,24 @@ const response = await fetch(
 
 ### Open-Meteo Weather
 ```typescript
-const response = await fetch(
-  `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=weathercode,temperature_2m&start_date=${date}&end_date=${date}`
-);
+const params = new URLSearchParams({
+  latitude: String(lat),
+  longitude: String(lon),
+  hourly: "weathercode,temperature_2m",
+  start_date: date,
+  end_date: date,
+});
+
+const rideDate = new Date(date);
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+
+const baseUrl =
+  rideDate < today
+    ? "https://archive-api.open-meteo.com/v1/archive"
+    : "https://api.open-meteo.com/v1/forecast";
+
+const response = await fetch(`${baseUrl}?${params.toString()}`);
 ```
 
 ## 🎨 Style Guidelines
