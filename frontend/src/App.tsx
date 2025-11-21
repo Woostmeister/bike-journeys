@@ -1,87 +1,118 @@
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from "react-router-dom";
 import { RideForm } from "./components/RideForm";
 import { RideList } from "./components/RideList";
-
+import { Dashboard } from "./components/Dashboard";
 import Signup from "./Signup";
 import Login from "./Login";
 import ProtectedRoute from "./ProtectedRoute";
 import { useAuth } from "./AuthContext";
 import { supabase } from "../lib/supabaseClient";
+import "./App.css";
 
-
-function App() {
+function Navigation() {
   const { user } = useAuth();
+  const location = useLocation();
+
+  const isActive = (path: string) => location.pathname === path;
 
   return (
-    <Router>
-      <nav style={{ padding: "1rem", background: "#222" }}>
-        <Link to="/" style={{ marginRight: "1rem", color: "white" }}>
-          Add Ride
-        </Link>
-        <Link to="/rides" style={{ marginRight: "1rem", color: "white" }}>
-          View Rides
-        </Link>
-
-        {!user && (
-          <>
-            <Link to="/login" style={{ marginRight: "1rem", color: "white" }}>
-              Login
-            </Link>
-            <Link to="/signup" style={{ color: "white" }}>
-              Signup
-            </Link>
-          </>
-        )}
+    <nav className="nav-container">
+      <div className="nav-content">
+        <div className="nav-brand">
+          <span className="nav-brand-icon">🏍️</span>
+          <span>Bike Journeys</span>
+        </div>
 
         {user && (
-          <button
-            onClick={() => supabase.auth.signOut()}
-            style={{
-              marginLeft: "1rem",
-              background: "transparent",
-              border: "1px solid white",
-              color: "white",
-              padding: "0.25rem 0.5rem",
-              cursor: "pointer",
-            }}
-          >
-            Logout
-          </button>
+          <div className="nav-links">
+            <Link 
+              to="/" 
+              className={`nav-link ${isActive("/") ? "active" : ""}`}
+            >
+              📊 Dashboard
+            </Link>
+            <Link 
+              to="/add" 
+              className={`nav-link ${isActive("/add") ? "active" : ""}`}
+            >
+              ✏️ Add Ride
+            </Link>
+            <Link 
+              to="/rides" 
+              className={`nav-link ${isActive("/rides") ? "active" : ""}`}
+            >
+              📖 All Rides
+            </Link>
+          </div>
         )}
-      </nav>
 
-      <div className="container" style={{ padding: "1rem", maxWidth: "600px", margin: "0 auto" }}>
-        <Routes>
-          {/* Protected routes */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <RideForm />
-              </ProtectedRoute>
-            }
-          />
+        <div className="nav-actions">
+          {!user ? (
+            <>
+              <Link to="/login" className="nav-link">
+                Login
+              </Link>
+              <Link to="/signup" className="nav-link">
+                Signup
+              </Link>
+            </>
+          ) : (
+            <>
+              <div className="nav-user">
+                👤 {user.email}
+              </div>
+              <button
+                onClick={() => supabase.auth.signOut()}
+                className="logout-btn"
+              >
+                Logout
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </nav>
+  );
+}
 
-          <Route
-            path="/rides"
-            element={
-              <ProtectedRoute>
-                <RideList />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Public routes */}
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/login" element={<Login />} />
-        </Routes>
+function App() {
+  return (
+    <Router>
+      <div className="app-container">
+        <Navigation />
+        <main className="main-content">
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/add"
+              element={
+                <ProtectedRoute>
+                  <RideForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/rides"
+              element={
+                <ProtectedRoute>
+                  <RideList />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/login" element={<Login />} />
+          </Routes>
+        </main>
       </div>
     </Router>
   );
 }
 
 export default App;
-
-
-
-
