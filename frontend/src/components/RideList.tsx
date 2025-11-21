@@ -1,28 +1,35 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabaseClient.ts"; 
+import { supabase } from "../../lib/supabaseClient";
+import { useAuth } from "../AuthContext";
 
-type Ride = {
-    id: string;
+interface Ride {
+    id: number;
     date: string;
-    distance_miles: number | null;
+    distance_miles: number;
     notes: string | null;
-};
+}
 
 export function RideList() {
+    const { user } = useAuth();
     const [rides, setRides] = useState<Ride[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        async function fetchRides() {
+        if (!user) return; // ProtectedRoute SHOULD prevent this anyway
+
+        async function loadRides() {
+            setLoading(true);
+            setError(null);
+
             const { data, error } = await supabase
                 .from("rides")
                 .select("*")
+                .eq("user_id", user.id)
                 .order("date", { ascending: false });
 
             if (error) {
-                console.error("Error loading rides:", error);
-                setError("Could not load rides.");
+                setError(error.message);
             } else {
                 setRides(data || []);
             }
@@ -30,58 +37,40 @@ export function RideList() {
             setLoading(false);
         }
 
-        fetchRides();
-    }, []);
+        loadRides();
+    }, [user]);
 
-    if (loading) return <p>Loading rides...</p>;
+    if (loading) return <p>Loading rides…</p>;
     if (error) return <p style={{ color: "red" }}>{error}</p>;
 
     return (
-        <div
-            style={{
-                background: "#2f2f2f",
-                padding: "28px",
-                borderRadius: "12px",
-                marginTop: "30px",
-                boxShadow: "0 4px 14px rgba(0, 0, 0, 0.25)"
-            }}
-        >
-            <h2>Your Rides</h2>
+        <div>
+            <h2 style={{ marginBottom: "1rem" }}>Your Rides</h2>
 
-            {rides.length === 0 && <p>No rides saved yet.</p>}
+            {rides.length === 0 && <p>No rides yet. Add one!</p>}
 
-            <ul style={{ listStyle: "none", padding: 0, marginTop: "20px" }}>
-                {rides.map(ride => (
-                    <li
-                        key={ride.id}
-                        style={{
-                            background: "#3a3a3a",
-                            padding: "16px",
-                            borderRadius: "8px",
-                            marginBottom: "12px"
-                        }}
-                    >
-                        <div>
-                            <strong>Date:</strong> {ride.date}
-                        </div>
-
-                        <div style={{ marginTop: "6px" }}>
-                            <strong>Distance:</strong>{" "}
-                            {ride.distance_miles !== null
-                                ? `${ride.distance_miles} miles`
-                                : "Not recorded"}
-                        </div>
-
-                        {ride.notes && (
-                            <div style={{ marginTop: "6px" }}>
-                                <strong>Notes:</strong> {ride.notes}
-                            </div>
-                        )}
-                    </li>
-                ))}
-            </ul>
+            {rides.map((ride) => (
+                <div
+                    key={ride.id}
+                    style={{
+                        background: "#fff",
+                        color: "#000",
+                        padding: "1rem",
+                        marginBottom: "1rem",
+                        borderRadius: "8px",
+                        boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                    }}
+                >
+                    <h3 style={{ margin: 0 }}>{ride.date}</h3>
+                    <p style={{ margin: "0.5rem 0" }}>
+                        <strong>{ride.distance_miles} miles</strong>
+                    </p>
+                    {ride.notes && <p style={{ opacity: 0.8 }}>{ride.notes}</p>}
+                </div>
+            ))}
         </div>
     );
 }
+
 
 
