@@ -52,6 +52,11 @@ A beautiful, modern web application for tracking your motorcycle/bike rides with
 - **Geocoding**: Open-Meteo Geocoding API
 - **Weather**: Open-Meteo Weather API
 
+## 🧹 Cleanup from the Azure version
+
+- Removed the legacy Azure Functions API (SQLite) now that Supabase provides the database and auth.
+- Dropped the Azure Static Web Apps config; Vercel handles routing via `vercel.json`.
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -149,8 +154,6 @@ frontend/
 │   └── ProtectedRoute.tsx     # Route protection HOC
 ├── lib/
 │   └── supabaseClient.ts      # Supabase configuration
-└── public/
-    └── staticwebapp.config.json
 ```
 
 ## 🎨 Design System
