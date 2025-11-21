@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../AuthContext";
 
-// Weather code map
 const weatherCodeMap: Record<number, { desc: string; icon: string }> = {
     0: { desc: "Clear sky", icon: "☀️" },
     1: { desc: "Mainly clear", icon: "🌤️" },
@@ -34,9 +33,10 @@ interface Ride {
 
 interface MonthGroup {
     year: number;
-    month: number; // 0–11
-    label: string; // e.g. "November 2025"
+    month: number;
+    label: string;
     rides: Ride[];
+    totalDistance: number;
 }
 
 export function RideList() {
@@ -45,11 +45,9 @@ export function RideList() {
     const [rides, setRides] = useState<Ride[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-    // Which month groups are open (key: "YYYY-MM")
     const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+    const [searchQuery, setSearchQuery] = useState("");
 
-    // 🔥 Load rides on mount
     useEffect(() => {
         if (!user) return;
 
@@ -72,16 +70,26 @@ export function RideList() {
         load();
     }, [user]);
 
-    // 🔥 Group rides by year + month, newest first
+    const filteredRides = useMemo(() => {
+        if (!searchQuery.trim()) return rides;
+        
+        const query = searchQuery.toLowerCase();
+        return rides.filter(ride => 
+            ride.location_name?.toLowerCase().includes(query) ||
+            ride.notes?.toLowerCase().includes(query) ||
+            new Date(ride.date).toLocaleDateString("en-GB").includes(query)
+        );
+    }, [rides, searchQuery]);
+
     const monthGroups: MonthGroup[] = useMemo(() => {
         const map = new Map<string, MonthGroup>();
 
-        for (const ride of rides) {
+        for (const ride of filteredRides) {
             const dateObj = new Date(ride.date);
             if (Number.isNaN(dateObj.getTime())) continue;
 
             const year = dateObj.getFullYear();
-            const month = dateObj.getMonth(); // 0–11
+            const month = dateObj.getMonth();
             const key = `${year}-${String(month + 1).padStart(2, "0")}`;
 
             let group = map.get(key);
@@ -91,18 +99,19 @@ export function RideList() {
                     year: "numeric"
                 });
 
-                group = { year, month, label, rides: [] };
+                group = { year, month, label, rides: [], totalDistance: 0 };
                 map.set(key, group);
             }
 
             group.rides.push(ride);
+            group.totalDistance += ride.distance_miles;
         }
 
         return Array.from(map.values()).sort((a, b) => {
             if (a.year !== b.year) return b.year - a.year;
             return b.month - a.month;
         });
-    }, [rides]);
+    }, [filteredRides]);
 
     const toggleGroup = (key: string) => {
         setOpenGroups(prev => ({
@@ -111,163 +120,240 @@ export function RideList() {
         }));
     };
 
-    if (loading) return <p>Loading rides…</p>;
-    if (error) return <p style={{ color: "red" }}>{error}</p>;
+    if (loading) {
+        return (
+            <div className="loading-container">
+                <div className="spinner"></div>
+                <p style={{ color: "var(--text-muted)" }}>Loading rides...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="alert alert-error">
+                <span>❌</span>
+                {error}
+            </div>
+        );
+    }
 
     return (
-        <div>
-            <h2 style={{ marginBottom: "1rem" }}>Your Rides</h2>
+        <div className="animate-in">
+            <div style={{ marginBottom: "2rem" }}>
+                <h1 style={{ marginBottom: "0.5rem" }}>📖 Your Rides</h1>
+                <p style={{ color: "var(--text-muted)" }}>Browse and search your riding history</p>
+            </div>
 
-            {monthGroups.length === 0 && (
-                <p>No rides yet. Add one!</p>
+            {rides.length > 0 && (
+                <div className="card" style={{ marginBottom: "2rem" }}>
+                    <div className="input-with-icon">
+                        <span className="input-icon">🔍</span>
+                        <input
+                            type="text"
+                            placeholder="Search by location, notes, or date..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                </div>
             )}
 
-            {monthGroups.map(group => {
-                const key = `${group.year}-${String(group.month + 1).padStart(2, "0")}`;
-                const isOpen = !!openGroups[key];
+            {monthGroups.length === 0 && (
+                <div className="card" style={{ textAlign: "center", padding: "3rem" }}>
+                    <div style={{ fontSize: "4rem", marginBottom: "1rem" }}>🔍</div>
+                    <h3>{rides.length === 0 ? "No rides yet!" : "No matching rides"}</h3>
+                    <p style={{ marginTop: "0.5rem", color: "var(--text-muted)" }}>
+                        {rides.length === 0 
+                            ? "Add your first ride to start tracking" 
+                            : "Try a different search term"}
+                    </p>
+                </div>
+            )}
 
-                return (
-                    <div
-                        key={key}
-                        style={{
-                            marginBottom: "1.25rem",
-                            borderRadius: "10px",
-                            overflow: "hidden",
-                            border: "1px solid #e5e7eb",
-                            boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
-                            background: "#f9fafb"
-                        }}
-                    >
-                        {/* Collapsible header */}
-                        <button
-                            type="button"
-                            onClick={() => toggleGroup(key)}
-                            style={{
-                                width: "100%",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                padding: "0.75rem 1rem",
-                                background: "#111827",
-                                color: "#f9fafb",
-                                border: "none",
-                                cursor: "pointer",
-                                fontSize: "1rem",
-                                fontWeight: 600
-                            }}
-                        >
-                            <span>{group.label}</span>
-                            <span
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                {monthGroups.map(group => {
+                    const key = `${group.year}-${String(group.month + 1).padStart(2, "0")}`;
+                    const isOpen = !!openGroups[key];
+
+                    return (
+                        <div key={key} className="card" style={{ padding: 0, overflow: "hidden" }}>
+                            <button
+                                type="button"
+                                onClick={() => toggleGroup(key)}
                                 style={{
-                                    display: "inline-flex",
+                                    width: "100%",
+                                    display: "flex",
                                     alignItems: "center",
-                                    justifyContent: "center",
-                                    width: "1.75rem",
-                                    height: "1.75rem",
-                                    borderRadius: "999px",
-                                    background: isOpen ? "#f9fafb" : "#4b5563",
-                                    color: isOpen ? "#111827" : "#f9fafb",
-                                    fontSize: "1.1rem",
-                                    fontWeight: 700,
-                                    transition: "all 0.15s ease-in-out"
+                                    justifyContent: "space-between",
+                                    padding: "1.5rem 2rem",
+                                    background: "linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%)",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    textAlign: "left",
+                                    transition: "all 0.2s ease"
                                 }}
                             >
-                                {isOpen ? "–" : "+"}
-                            </span>
-                        </button>
+                                <div>
+                                    <div style={{ 
+                                        fontSize: "1.5rem", 
+                                        fontWeight: 700, 
+                                        marginBottom: "0.25rem",
+                                        color: "var(--text-primary)"
+                                    }}>
+                                        {group.label}
+                                    </div>
+                                    <div style={{ 
+                                        fontSize: "0.875rem", 
+                                        color: "var(--text-muted)",
+                                        display: "flex",
+                                        gap: "1.5rem"
+                                    }}>
+                                        <span>🏍️ {group.rides.length} rides</span>
+                                        <span>🛣️ {group.totalDistance.toFixed(1)} miles</span>
+                                    </div>
+                                </div>
+                                <div
+                                    style={{
+                                        width: "2.5rem",
+                                        height: "2.5rem",
+                                        borderRadius: "50%",
+                                        background: isOpen ? "var(--accent-primary)" : "var(--bg-primary)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        fontSize: "1.5rem",
+                                        fontWeight: 700,
+                                        transition: "all 0.3s ease",
+                                        transform: isOpen ? "rotate(180deg)" : "rotate(0deg)"
+                                    }}
+                                >
+                                    {isOpen ? "−" : "+"}
+                                </div>
+                            </button>
 
-                        {/* Collapsible content */}
-                        {isOpen && (
-                            <div style={{ padding: "0.75rem 1rem 0.9rem" }}>
-                                {group.rides.map(ride => {
-                                    const weather =
-                                        ride.weather_code !== null
+                            {isOpen && (
+                                <div style={{ padding: "0 2rem 2rem" }}>
+                                    {group.rides.map(ride => {
+                                        const weather = ride.weather_code !== null
                                             ? weatherCodeMap[ride.weather_code] ?? null
                                             : null;
 
-                                    const formattedDate = new Date(ride.date).toLocaleDateString(
-                                        "en-GB",
-                                        {
-                                            weekday: "short",
-                                            day: "numeric",
-                                            month: "short",
-                                            year: "numeric"
-                                        }
-                                    );
+                                        const formattedDate = new Date(ride.date).toLocaleDateString(
+                                            "en-GB",
+                                            {
+                                                weekday: "long",
+                                                day: "numeric",
+                                                month: "short",
+                                                year: "numeric"
+                                            }
+                                        );
 
-                                    return (
-                                        <div
-                                            key={ride.id}
-                                            style={{
-                                                background: "#ffffff",
-                                                padding: "0.9rem 1rem",
-                                                marginBottom: "0.75rem",
-                                                borderRadius: "8px",
-                                                boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                                                color: "#000",
-                                                border: "1px solid #e5e7eb"
-                                            }}
-                                        >
-                                            <h4
+                                        return (
+                                            <div
+                                                key={ride.id}
                                                 style={{
-                                                    margin: 0,
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: "0.35rem",
-                                                    fontSize: "0.98rem"
+                                                    background: "var(--bg-secondary)",
+                                                    padding: "1.5rem",
+                                                    marginTop: "1rem",
+                                                    borderRadius: "12px",
+                                                    border: "1px solid var(--border)",
+                                                    transition: "all 0.2s ease"
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.transform = "translateX(8px)";
+                                                    e.currentTarget.style.borderColor = "var(--accent-primary)";
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.transform = "translateX(0)";
+                                                    e.currentTarget.style.borderColor = "var(--border)";
                                                 }}
                                             >
-                                                <span role="img" aria-label="motorbike">
-                                                    🏍️
-                                                </span>
-                                                <span>{formattedDate}</span>
-                                            </h4>
+                                                <div style={{
+                                                    display: "flex",
+                                                    justifyContent: "space-between",
+                                                    alignItems: "flex-start",
+                                                    marginBottom: "1rem"
+                                                }}>
+                                                    <div>
+                                                        <h4 style={{
+                                                            margin: 0,
+                                                            fontSize: "1.1rem",
+                                                            color: "var(--text-primary)",
+                                                            marginBottom: "0.5rem"
+                                                        }}>
+                                                            🏍️ {formattedDate}
+                                                        </h4>
+                                                        {ride.location_name && (
+                                                            <div style={{
+                                                                color: "var(--text-secondary)",
+                                                                fontSize: "0.95rem",
+                                                                display: "flex",
+                                                                alignItems: "center",
+                                                                gap: "0.5rem"
+                                                            }}>
+                                                                <span>📍</span>
+                                                                <span>{ride.location_name}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div
+                                                        style={{
+                                                            background: "var(--accent-primary)",
+                                                            color: "white",
+                                                            padding: "0.5rem 1rem",
+                                                            borderRadius: "8px",
+                                                            fontWeight: 700,
+                                                            fontSize: "1.1rem"
+                                                        }}
+                                                    >
+                                                        {ride.distance_miles} mi
+                                                    </div>
+                                                </div>
 
-                                            <p style={{ margin: "0.35rem 0" }}>
-                                                <strong>{ride.distance_miles} miles</strong>
-                                            </p>
-
-                                            {ride.location_name && (
-                                                <p style={{ margin: "0.2rem 0" }}>
-                                                    <span role="img" aria-label="location">
-                                                        📍
-                                                    </span>{" "}
-                                                    {ride.location_name}
-                                                </p>
-                                            )}
-
-                                            {weather && (
-                                                <p style={{ margin: "0.2rem 0" }}>
-                                                    {weather.icon} {weather.desc}
-                                                    {ride.temperature !== null && (
-                                                        <> – {ride.temperature.toFixed(1)}°C</>
-                                                    )}
-                                                </p>
-                                            )}
-
-                                            {ride.notes && (
-                                                <p
-                                                    style={{
-                                                        marginTop: "0.45rem",
-                                                        opacity: 0.85,
+                                                {weather && (
+                                                    <div style={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: "0.5rem",
+                                                        padding: "0.75rem",
+                                                        background: "var(--bg-tertiary)",
+                                                        borderRadius: "8px",
+                                                        marginBottom: ride.notes ? "1rem" : 0,
                                                         fontSize: "0.95rem"
-                                                    }}
-                                                >
-                                                    {ride.notes}
-                                                </p>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                );
-            })}
+                                                    }}>
+                                                        <span style={{ fontSize: "1.5rem" }}>{weather.icon}</span>
+                                                        <span style={{ color: "var(--text-secondary)" }}>
+                                                            {weather.desc}
+                                                            {ride.temperature !== null && (
+                                                                <> · {ride.temperature.toFixed(1)}°C</>
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                {ride.notes && (
+                                                    <div style={{
+                                                        padding: "0.75rem",
+                                                        background: "var(--bg-tertiary)",
+                                                        borderRadius: "8px",
+                                                        color: "var(--text-secondary)",
+                                                        fontStyle: "italic",
+                                                        fontSize: "0.95rem",
+                                                        lineHeight: 1.6
+                                                    }}>
+                                                        💭 {ride.notes}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 }
-
-
-
-
