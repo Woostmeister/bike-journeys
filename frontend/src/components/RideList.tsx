@@ -30,6 +30,7 @@ interface Ride {
     weather_code: number | null;
     temperature: number | null;
     buddy_id: string | null;
+    photo_url: string | null;
     buddies?: {
         name: string;
     } | null;
@@ -338,7 +339,7 @@ export function RideList() {
                                                         padding: "0.75rem",
                                                         background: "var(--bg-tertiary)",
                                                         borderRadius: "8px",
-                                                        marginBottom: ride.notes ? "1rem" : 0,
+                                                        marginBottom: ride.notes || ride.photo_url ? "1rem" : 0,
                                                         fontSize: "0.95rem"
                                                     }}>
                                                         <span style={{ fontSize: "1.5rem" }}>{weather.icon}</span>
@@ -348,6 +349,23 @@ export function RideList() {
                                                                 <> · {ride.temperature.toFixed(1)}°C</>
                                                             )}
                                                         </span>
+                                                    </div>
+                                                )}
+
+                                                {ride.photo_url && (
+                                                    <div style={{
+                                                        marginBottom: ride.notes ? "1rem" : 0,
+                                                        borderRadius: "12px",
+                                                        overflow: "hidden",
+                                                        border: "1px solid var(--border)",
+                                                        background: "var(--bg-tertiary)"
+                                                    }}>
+                                                        <img
+                                                            src={ride.photo_url}
+                                                            alt={`Ride on ${formattedDate}`}
+                                                            style={{ display: "block", width: "100%", maxHeight: "420px", objectFit: "cover" }}
+                                                            loading="lazy"
+                                                        />
                                                     </div>
                                                 )}
 
