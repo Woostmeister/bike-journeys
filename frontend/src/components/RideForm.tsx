@@ -1,6 +1,27 @@
 import { useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../AuthContext";
+import { WeatherResponse } from "../types/WeatherTypes";
+
+interface LocationResult {
+    id: number;
+    display: string;
+    lat: number;
+    lon: number;
+}
+
+interface GeoApiResult {
+    id: number;
+    name: string;
+    admin1?: string;
+    country: string;
+    latitude: number;
+    longitude: number;
+}
+
+interface GeoSearchResponse {
+    results?: GeoApiResult[];
+}
 
 export function RideForm() {
     const { user } = useAuth();
@@ -10,8 +31,8 @@ export function RideForm() {
     const [notes, setNotes] = useState("");
 
     const [locationQuery, setLocationQuery] = useState("");
-    const [locationResults, setLocationResults] = useState<any[]>([]);
-    const [selectedLocation, setSelectedLocation] = useState<any | null>(null);
+    const [locationResults, setLocationResults] = useState<LocationResult[]>([]);
+    const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
 
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
@@ -32,14 +53,14 @@ export function RideForm() {
                 )}&count=5&language=en&format=json`
             );
 
-            const json = await response.json();
+            const json: GeoSearchResponse = await response.json();
 
             if (!json.results) {
                 setLocationResults([]);
                 return;
             }
 
-            const mapped = json.results.map((loc: any) => ({
+            const mapped = json.results.map((loc) => ({
                 id: loc.id,
                 display: `${loc.name}${loc.admin1 ? ", " + loc.admin1 : ""}, ${loc.country}`,
                 lat: loc.latitude,
@@ -91,7 +112,7 @@ export function RideForm() {
 
             const weatherResponse = await fetch(`${baseUrl}?${params.toString()}`);
 
-            const weatherData = await weatherResponse.json();
+            const weatherData: WeatherResponse = await weatherResponse.json();
 
             if (weatherData.hourly?.weathercode?.length > 0) {
                 weather_code = weatherData.hourly.weathercode[0];
