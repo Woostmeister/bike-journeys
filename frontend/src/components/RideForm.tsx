@@ -45,6 +45,10 @@ export function RideForm() {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [photoFile, setPhotoFile] = useState<File | null>(null);
+    const [fileInputKey, setFileInputKey] = useState(() => crypto.randomUUID());
+
+    const photosBucket = import.meta.env.VITE_SUPABASE_PHOTOS_BUCKET ?? "ride-photos";
 
     useEffect(() => {
         const userId = user?.id;
@@ -122,6 +126,7 @@ export function RideForm() {
 
         let weather_code = null;
         let temperature = null;
+        let photo_url: string | null = null;
 
         const rideDate = new Date(date);
         const today = new Date();
@@ -160,6 +165,27 @@ export function RideForm() {
             console.warn("Weather fetch failed");
         }
 
+        if (photoFile) {
+            const fileExtension = photoFile.name.split(".").pop()?.replace(/[^a-zA-Z0-9]/g, "");
+            const safeExtension = fileExtension && fileExtension.length > 0 ? fileExtension : "jpg";
+            const filePath = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${safeExtension}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from(photosBucket)
+                .upload(filePath, photoFile, {
+                    cacheControl: "3600"
+                });
+
+            if (uploadError) {
+                setError(`Failed to upload photo: ${uploadError.message}`);
+                setLoading(false);
+                return;
+            }
+
+            const { data: publicUrlData } = supabase.storage.from(photosBucket).getPublicUrl(filePath);
+            photo_url = publicUrlData.publicUrl;
+        }
+
         const { error } = await supabase.from("rides").insert([
             {
                 user_id: user.id,
@@ -171,7 +197,8 @@ export function RideForm() {
                 longitude: Number(lon),
                 weather_code,
                 temperature,
-                buddy_id: selectedBuddyId || null
+                buddy_id: selectedBuddyId || null,
+                photo_url
             }
         ]);
 
@@ -189,6 +216,8 @@ export function RideForm() {
             setLocationResults([]);
             setSelectedLocation(null);
             setSelectedBuddyId("");
+            setPhotoFile(null);
+            setFileInputKey(crypto.randomUUID());
         }
     }
 
@@ -311,6 +340,28 @@ export function RideForm() {
                         <div style={{ fontSize: "0.9rem", color: "var(--text-muted)", marginTop: "0.35rem" }}>
                             Manage buddies from the Buddies page.
                         </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="photo">Ride photo (optional)</label>
+                        <input
+                            key={fileInputKey}
+                            id="photo"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0] ?? null;
+                                setPhotoFile(file);
+                            }}
+                        />
+                        <div style={{ fontSize: "0.9rem", color: "var(--text-muted)", marginTop: "0.35rem" }}>
+                            Upload a photo to remember the ride. Max one photo per ride.
+                        </div>
+                        {photoFile && (
+                            <div style={{ marginTop: "0.5rem", color: "var(--text-secondary)", fontSize: "0.95rem" }}>
+                                Selected: {photoFile.name}
+                            </div>
+                        )}
                     </div>
 
                     <div className="form-group">
