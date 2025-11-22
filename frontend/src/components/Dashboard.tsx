@@ -19,14 +19,15 @@ export function Dashboard() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!user) return;
+        const userId = user?.id;
+        if (!userId) return;
 
         async function loadRides() {
             setLoading(true);
             const { data } = await supabase
                 .from("rides")
                 .select("*")
-                .eq("user_id", user.id)
+                .eq("user_id", userId)
                 .order("date", { ascending: true });
 
             setRides(data || []);

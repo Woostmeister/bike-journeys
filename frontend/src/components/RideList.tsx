@@ -49,7 +49,8 @@ export function RideList() {
     const [searchQuery, setSearchQuery] = useState("");
 
     useEffect(() => {
-        if (!user) return;
+        const userId = user?.id;
+        if (!userId) return;
 
         async function load() {
             setLoading(true);
@@ -58,7 +59,7 @@ export function RideList() {
             const { data, error } = await supabase
                 .from("rides")
                 .select("*")
-                .eq("user_id", user.id)
+                .eq("user_id", userId)
                 .order("date", { ascending: false });
 
             if (error) setError(error.message);
