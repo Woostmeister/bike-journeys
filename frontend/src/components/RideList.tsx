@@ -29,6 +29,10 @@ interface Ride {
     location_name: string | null;
     weather_code: number | null;
     temperature: number | null;
+    buddy_id: string | null;
+    buddies?: {
+        name: string;
+    } | null;
 }
 
 interface MonthGroup {
@@ -58,7 +62,7 @@ export function RideList() {
 
             const { data, error } = await supabase
                 .from("rides")
-                .select("*")
+                .select("*, buddies(name)")
                 .eq("user_id", userId)
                 .order("date", { ascending: false });
 
@@ -75,9 +79,10 @@ export function RideList() {
         if (!searchQuery.trim()) return rides;
         
         const query = searchQuery.toLowerCase();
-        return rides.filter(ride => 
+        return rides.filter(ride =>
             ride.location_name?.toLowerCase().includes(query) ||
             ride.notes?.toLowerCase().includes(query) ||
+            (ride.buddies?.name?.toLowerCase() ?? "").includes(query) ||
             new Date(ride.date).toLocaleDateString("en-GB").includes(query)
         );
     }, [rides, searchQuery]);
@@ -295,6 +300,19 @@ export function RideList() {
                                                             }}>
                                                                 <span>📍</span>
                                                                 <span>{ride.location_name}</span>
+                                                            </div>
+                                                        )}
+                                                        {ride.buddies?.name && (
+                                                            <div style={{
+                                                                color: "var(--text-secondary)",
+                                                                fontSize: "0.95rem",
+                                                                display: "flex",
+                                                                alignItems: "center",
+                                                                gap: "0.5rem",
+                                                                marginTop: "0.35rem"
+                                                            }}>
+                                                                <span>🤝</span>
+                                                                <span>{ride.buddies.name}</span>
                                                             </div>
                                                         )}
                                                     </div>

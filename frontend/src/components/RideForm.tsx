@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../AuthContext";
 import type { WeatherResponse } from "../types/WeatherTypes";
+
+interface Buddy {
+    id: string;
+    name: string;
+}
 
 interface LocationResult {
     id: number;
@@ -34,9 +39,29 @@ export function RideForm() {
     const [locationResults, setLocationResults] = useState<LocationResult[]>([]);
     const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
 
+    const [buddies, setBuddies] = useState<Buddy[]>([]);
+    const [selectedBuddyId, setSelectedBuddyId] = useState<string>("");
+
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const userId = user?.id;
+        if (!userId) return;
+
+        async function loadBuddies() {
+            const { data, error } = await supabase
+                .from("buddies")
+                .select("id, name")
+                .eq("user_id", userId)
+                .order("name", { ascending: true });
+
+            if (!error && data) setBuddies(data);
+        }
+
+        loadBuddies();
+    }, [user]);
 
     async function searchLocations(query: string) {
         setLocationQuery(query);
@@ -93,6 +118,7 @@ export function RideForm() {
         }
 
         const { lat, lon } = selectedLocation;
+        const cleanedNotes = notes.trim();
 
         let weather_code = null;
         let temperature = null;
@@ -139,12 +165,13 @@ export function RideForm() {
                 user_id: user.id,
                 date,
                 distance_miles: Number(distance),
-                notes,
+                notes: cleanedNotes || null,
                 location_name: selectedLocation.display,
                 latitude: Number(lat),
                 longitude: Number(lon),
                 weather_code,
-                temperature
+                temperature,
+                buddy_id: selectedBuddyId || null
             }
         ]);
 
@@ -161,6 +188,7 @@ export function RideForm() {
             setLocationQuery("");
             setLocationResults([]);
             setSelectedLocation(null);
+            setSelectedBuddyId("");
         }
     }
 
@@ -263,6 +291,25 @@ export function RideForm() {
                                     ))}
                                 </div>
                             )}
+                        </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="buddy">Buddy (optional)</label>
+                        <select
+                            id="buddy"
+                            value={selectedBuddyId}
+                            onChange={(e) => setSelectedBuddyId(e.target.value)}
+                        >
+                            <option value="">Solo ride</option>
+                            {buddies.map(buddy => (
+                                <option key={buddy.id} value={buddy.id}>
+                                    {buddy.name}
+                                </option>
+                            ))}
+                        </select>
+                        <div style={{ fontSize: "0.9rem", color: "var(--text-muted)", marginTop: "0.35rem" }}>
+                            Manage buddies from the Buddies page.
                         </div>
                     </div>
 
