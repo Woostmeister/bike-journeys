@@ -1,5 +1,11 @@
 # 🎨 Design Overhaul Changelog
 
+## Version 2.0.1 - Weather documentation alignment
+
+- Documented archive vs. forecast Open-Meteo endpoints based on ride date.
+- Clarified graceful weather fetch fallback so rides still save without data.
+- Captured RideForm → RideList → Weather fetch → Display flow across design docs and summaries.
+
 ## Version 2.0 - Complete Visual Redesign
 
 ### ✨ What's New

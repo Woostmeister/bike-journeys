@@ -206,6 +206,9 @@ const baseUrl =
 const response = await fetch(`${baseUrl}?${params.toString()}`);
 ```
 
+- Use the archive endpoint for any ride date **before today**; otherwise hit the forecast endpoint.
+- If the weather request fails, we still insert the ride and simply leave `weather_code`/`temperature` null so the UI can display the ride without weather data.
+
 ## 🎨 Style Guidelines
 
 ### Spacing

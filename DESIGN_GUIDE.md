@@ -48,6 +48,14 @@ The redesign focuses on creating a premium, modern experience for motorcycle ent
 
 ---
 
+## 🔄 Data Flow
+- **RideForm → RideList → Weather fetch → Display**
+  - RideForm collects date/location, calls Open-Meteo, and chooses the archive endpoint when the date is before today.
+  - Weather fetch failures do not block saving; rides render with empty weather badges when data is missing.
+  - After save, RideList refreshes and the weather code/temperature drive the emoji indicators shown in the ride cards.
+
+---
+
 ## 🎯 Key Features Showcase
 
 ### 1. **Dashboard** 📊

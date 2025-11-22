@@ -36,10 +36,10 @@ A beautiful, modern web application for tracking your motorcycle/bike rides with
 - User-specific data isolation
 
 ### 🌦️ **Weather Integration**
-- Automatic weather code fetching for ride dates
-- Temperature recording
-- Weather emoji indicators
-- Open-Meteo API integration
+- Automatic weather code fetching for ride dates using Open-Meteo
+- Temperature recording with emoji-based weather indicators
+- Uses the **archive** endpoint for past dates and the **forecast** endpoint for today/future
+- Falls back gracefully if the weather call fails so rides still save
 
 ## 🛠️ Tech Stack
 

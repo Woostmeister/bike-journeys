@@ -123,7 +123,7 @@ I've completely transformed your Bike Journeys app from a functional prototype i
 - Location autocomplete dropdown
 - Success message appears after save
 - Form clears automatically
-- Weather fetched automatically in background
+- Weather fetched automatically (archive for past dates, forecast for today/future) with graceful fallback if the API is unavailable
 
 ---
 
@@ -161,7 +161,7 @@ I've completely transformed your Bike Journeys app from a functional prototype i
 ```
 - Click month header to expand/collapse
 - Hover on ride card = slide right + border glow
-- Weather with emoji indicators
+- Weather with emoji indicators; if unavailable the ride still appears without the badge
 - Notes in styled box
 
 ---
