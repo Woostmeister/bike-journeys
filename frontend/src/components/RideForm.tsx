@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../AuthContext";
-import { WeatherResponse } from "../types/WeatherTypes";
+import type { WeatherResponse } from "../types/WeatherTypes";
 
 interface LocationResult {
     id: number;
@@ -86,6 +86,12 @@ export function RideForm() {
             return;
         }
 
+        if (!user) {
+            setError("You need to be signed in to save a ride.");
+            setLoading(false);
+            return;
+        }
+
         const { lat, lon } = selectedLocation;
 
         let weather_code = null;
@@ -114,9 +120,15 @@ export function RideForm() {
 
             const weatherData: WeatherResponse = await weatherResponse.json();
 
-            if (weatherData.hourly?.weathercode?.length > 0) {
-                weather_code = weatherData.hourly.weathercode[0];
-                temperature = weatherData.hourly.temperature_2m[0];
+            const weatherCodeSample = weatherData.hourly?.weathercode?.[0];
+            const temperatureSample = weatherData.hourly?.temperature_2m?.[0];
+
+            if (typeof weatherCodeSample === "number") {
+                weather_code = weatherCodeSample;
+            }
+
+            if (typeof temperatureSample === "number") {
+                temperature = temperatureSample;
             }
         } catch {
             console.warn("Weather fetch failed");
