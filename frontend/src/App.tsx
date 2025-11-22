@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from "react-router-dom";
 import { RideForm } from "./components/RideForm";
 import { RideList } from "./components/RideList";
+import { ManageBuddies } from "./components/ManageBuddies";
 import { Dashboard } from "./components/Dashboard";
 import Signup from "./Signup";
 import Login from "./Login";
@@ -37,11 +38,17 @@ function Navigation() {
             >
               ✏️ Add Ride
             </Link>
-            <Link 
-              to="/rides" 
+            <Link
+              to="/rides"
               className={`nav-link ${isActive("/rides") ? "active" : ""}`}
             >
               📖 All Rides
+            </Link>
+            <Link
+              to="/buddies"
+              className={`nav-link ${isActive("/buddies") ? "active" : ""}`}
+            >
+              🤝 Buddies
             </Link>
           </div>
         )}
@@ -103,6 +110,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <RideList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/buddies"
+              element={
+                <ProtectedRoute>
+                  <ManageBuddies />
                 </ProtectedRoute>
               }
             />
